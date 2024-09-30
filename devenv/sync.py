@@ -107,29 +107,6 @@ def main(context: dict[str, str]) -> int:
     print(f"ensuring {repo} venv at {venv_dir}...")
     venv.ensure(venv_dir, python_version, url, sha256)
 
-    if constants.DARWIN:
-        try:
-            colima.install(
-                repo_config["colima"]["version"],
-                repo_config["colima"][constants.SYSTEM_MACHINE],
-                repo_config["colima"][f"{constants.SYSTEM_MACHINE}_sha256"],
-                reporoot,
-            )
-        except TypeError:
-            # this is needed for devenv <=1.4.0,>1.2.3 to finish syncing and therefore update itself
-            colima.install(
-                repo_config["colima"]["version"],
-                repo_config["colima"][constants.SYSTEM_MACHINE],
-                repo_config["colima"][f"{constants.SYSTEM_MACHINE}_sha256"],
-            )
-
-        # TODO: move limactl version into per-repo config
-        try:
-            limactl.install(reporoot)
-        except TypeError:
-            # this is needed for devenv <=1.4.0,>1.2.3 to finish syncing and therefore update itself
-            limactl.install()
-
     if not run_procs(
         repo,
         reporoot,
@@ -228,6 +205,20 @@ def main(context: dict[str, str]) -> int:
         verbose,
     ):
         return 1
+
+    if constants.DARWIN:
+        colima.install(
+            repo_config["colima"]["version"],
+            repo_config["colima"][constants.SYSTEM_MACHINE],
+            repo_config["colima"][f"{constants.SYSTEM_MACHINE}_sha256"],
+            reporoot,
+        )
+        limactl.install(
+            repo_config["lima"]["version"],
+            repo_config["lima"][constants.SYSTEM_MACHINE],
+            repo_config["lima"][f"{constants.SYSTEM_MACHINE}_sha256"],
+            reporoot,
+        )
 
     fs.ensure_symlink("../../config/hooks/post-merge", f"{reporoot}/.git/hooks/post-merge")
 
