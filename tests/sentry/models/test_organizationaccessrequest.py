@@ -1,3 +1,4 @@
+import pytest
 from django.core import mail
 
 from sentry.models.organizationaccessrequest import OrganizationAccessRequest
@@ -7,7 +8,7 @@ from sentry.testutils.cases import TestCase
 from sentry.testutils.helpers.features import with_feature
 
 
-class SendRequestEmailTest(TestCase):
+class OrganizationAccessRequestTest(TestCase):
     def test_sends_email_to_everyone(self):
         owner = self.create_user("owner@example.com")
         team_admin = self.create_user("team-admin@example.com")
@@ -79,3 +80,21 @@ class SendRequestEmailTest(TestCase):
 
         assert len(mail.outbox) == 1
         assert org.absolute_url("/settings/teams/") in mail.outbox[0].body
+
+    def test_prune_outdated_team_requests(self):
+        owner_user = self.create_user("owner@example.com")
+        organization = self.create_organization(owner=owner_user)
+        team = self.create_team(organization=organization)
+        self.create_team_membership(team=team, user=owner_user)
+        member_user = self.create_user("leander@example.com")
+        member = self.create_member(organization=organization, role="member", user=member_user)
+        request = OrganizationAccessRequest.objects.create(member=member, team=team)
+        self.create_team_membership(team=team, member=member)
+
+        request.refresh_from_db()
+        assert request.id
+
+        OrganizationAccessRequest.objects.prune_outdated_team_requests(organization=organization)
+
+        with pytest.raises(OrganizationAccessRequest.DoesNotExist):
+            request = OrganizationAccessRequest.objects.get(id=request.id)

@@ -1,3 +1,6 @@
+import logging
+from typing import ClassVar
+
 from django.conf import settings
 from django.db.models import Q
 from django.urls import reverse
@@ -6,12 +9,47 @@ from sentry import roles
 from sentry.backup.scopes import RelocationScope
 from sentry.db.models import FlexibleForeignKey, Model, region_silo_model, sane_repr
 from sentry.db.models.fields.hybrid_cloud_foreign_key import HybridCloudForeignKey
+from sentry.db.models.manager.base import BaseManager
+from sentry.models.organization import Organization
+from sentry.models.organizationmember import OrganizationMember
 from sentry.users.services.user.service import user_service
+
+logger = logging.getLogger(__name__)
+
+
+class OrganizationAccessRequestManager(BaseManager["OrganizationAccessRequest"]):
+    def prune_outdated_team_requests(self, organization: Organization):
+        """
+        It's possible for members to join teams without deleting the access request. This method
+        will delete those 'outdated' requests for an organization.
+        """
+        all_access_requests: list[OrganizationAccessRequest] = list(
+            OrganizationAccessRequest.objects.filter(
+                member__user_is_active=True,
+                member__user_id__isnull=False,
+                team__organization=organization,
+            ).select_related("member")
+        )
+        teams_by_user = OrganizationMember.objects.get_teams_by_user(organization=organization)
+        for access_request in all_access_requests:
+            if access_request.team_id in teams_by_user[access_request.member.user_id]:
+                logger.info(
+                    "prune_outdated_team_requests",
+                    extra={
+                        "team_id": access_request.team_id,
+                        "user_id": access_request.member.user_id,
+                        "member_id": access_request.member_id,
+                        "requester_id": access_request.requester_id,
+                    },
+                )
+                access_request.delete()
 
 
 @region_silo_model
 class OrganizationAccessRequest(Model):
     __relocation_scope__ = RelocationScope.Organization
+
+    objects: ClassVar[OrganizationAccessRequestManager] = OrganizationAccessRequestManager()
 
     team = FlexibleForeignKey("sentry.Team")
     member = FlexibleForeignKey("sentry.OrganizationMember")
