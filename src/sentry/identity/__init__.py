@@ -2,7 +2,6 @@ from .base import *  # NOQA
 from .bitbucket import *  # NOQA
 from .discord import *  # NOQA
 from .github import GitHubIdentityProvider
-from .github_enterprise import GitHubEnterpriseIdentityProvider
 from .gitlab import *  # NOQA
 from .google import *  # NOQA
 from .manager import IdentityManager
@@ -24,7 +23,6 @@ is_login_provider = default_manager.is_login_provider
 # initialized there.
 register(SlackIdentityProvider)  # NOQA
 register(GitHubIdentityProvider)  # NOQA
-register(GitHubEnterpriseIdentityProvider)  # NOQA
 register(VSTSNewIdentityProvider)  # NOQA
 register(VSTSIdentityProvider)  # NOQA
 register(VstsExtensionIdentityProvider)  # NOQA

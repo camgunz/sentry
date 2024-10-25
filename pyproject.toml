@@ -203,7 +203,6 @@ module = [
     "sentry.eventstore.models",
     "sentry.grouping.strategies.legacy",
     "sentry.identity.bitbucket.provider",
-    "sentry.identity.github_enterprise.provider",
     "sentry.identity.gitlab.provider",
     "sentry.identity.oauth2",
     "sentry.identity.pipeline",
