@@ -29,7 +29,7 @@ DEFAULT_RECOVERY_STRICTNESS = 10
 DEFAULT_RECOVERY_WINDOW_MULTIPLIER = 2
 
 
-class CircuitBreakerState(Enum):
+class CircuitBreakerState(str, Enum):
     OK = "circuit_okay"
     BROKEN = "circuit_broken"
     RECOVERY = "recovery"
