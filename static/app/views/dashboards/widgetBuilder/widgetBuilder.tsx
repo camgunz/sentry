@@ -304,8 +304,7 @@ function WidgetBuilder({
 
   const [splitDecision, setSplitDecision] = useState<WidgetType | undefined>(undefined);
 
-  let tags: TagCollection = {};
-  const eventsTags = useTags();
+  let tags: TagCollection = useTags();
 
   // HACK: Inject EAP dataset tags when selecting the Spans dataset
   const numericSpanTags = useSpanTags('number');
@@ -313,8 +312,6 @@ function WidgetBuilder({
 
   if (state.dataSet === DataSet.SPANS) {
     tags = {...numericSpanTags, ...stringSpanTags};
-  } else {
-    tags = eventsTags;
   }
 
   useEffect(() => {
@@ -323,7 +320,7 @@ function WidgetBuilder({
       new_widget: !isEditing,
     });
 
-    if (isEmptyObject(eventsTags) && dataSet !== DataSet.SPANS) {
+    if (isEmptyObject(tags) && dataSet !== DataSet.SPANS) {
       loadOrganizationTags(api, organization.slug, {
         ...selection,
         // Pin the request to 14d to avoid timeouts, see DD-967 for
